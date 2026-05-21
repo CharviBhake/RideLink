@@ -1,45 +1,45 @@
-🚗 RideLink 
+RideLink 
 A scalable system for a carpooling platform that enables users to share rides, reduce travel costs, and minimize environmental impact through efficient ride matching and real-time communication.
 
-🌟 Overview
+- Overview
 RideLink provides a safe, secure, and efficient way to connect users traveling in the same direction. The backend handles ride management, booking workflows, real-time chat, geospatial search, and user analytics such as savings and carbon footprint.
 
-🚀 Features
-👤 Authentication & Security
+- Features
+ Authentication & Security
 * JWT-based authentication (Login / Signup)
 * Refresh token mechanism
 * Secure logout with Redis-based JWT blacklist
 
-🚗 Ride Management
+- Ride Management
 * Create and publish rides
 * Search rides using geospatial queries (MongoDB 2dsphere index)
 * Match rides based on proximity and destination
 * Dynamic seat availability tracking
 
-📍 Booking System
+- Booking System
 * Book seats in a ride
 * Driver can Confirm/reject booking requests
 * Role-based ride participation (Driver / Passenger)
 
-💬 Real-time Chat
+- Real-time Chat
 * WebSocket-based chat system
 * Dedicated chat room per ride
 * Enables communication between all ride participants
 
-⭐ Rating & Review System
+- Rating & Review System
 * Passengers can rate drivers after ride completion
 * Supports:
   * ⭐ Star ratings (1–5)
   * ✍️ Comments
 * Prevents duplicate reviews per ride
 
-📊 Analytics & Insights
+- Analytics & Insights
 * CO₂ savings calculation per ride
 * User-level cumulative environmental impact
 * Travel cost savings estimation
 * Ride history (Driver + Passenger views)
 
-👤 User Profile
+- User Profile
 * Editable user profile
 * Stores:
   * Contact info
