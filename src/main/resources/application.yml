@@ -3,21 +3,22 @@ spring:
     name: Smart_Car_Pooling
   data:
     mongodb:
-      uri: mongodb+srv://charvibhake:Charvi%402005@cluster0.yvzxdt4.mongodb.net/carpooling_db?retryWrites=true&w=majority&appName=Cluster0
+      uri: ${MONGODB_URI}
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+      ssl:
+        enabled: true
       timeout: 2000ms
-
     cache:
       type: redis
-
 
 mail:
   host: smtp.gmail.com
   port: 587
-  username: charvibhake@gmail.com
-  password: yhhnqwiajkgqkwxd # your Gmail App Password (no spaces)
+  username: ${MAIL_USERNAME}
+  password: ${MAIL_PASSWORD}
   properties:
     mail:
       smtp:
@@ -27,4 +28,4 @@ mail:
           required: true
 
 server:
-  port: 8080
+  port: ${PORT:8080}
