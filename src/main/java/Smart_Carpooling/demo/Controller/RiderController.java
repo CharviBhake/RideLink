@@ -26,7 +26,7 @@ import org.springframework.data.geo.Point;
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexType;
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
 
-@CrossOrigin(origins="http://localhost:5173")
+@CrossOrigin(origins = {"http://localhost:3000", "https://ride-link-frontend.vercel.app"})
 @Controller
 @RequestMapping("/ride")
 public class RiderController {
