@@ -1,12 +1,14 @@
 package Smart_Carpooling.demo.Controller;
 
 import Smart_Carpooling.demo.Entity.Booking;
+import Smart_Carpooling.demo.Entity.CoRiderDTO;
 import Smart_Carpooling.demo.Entity.Ride;
 import Smart_Carpooling.demo.Entity.User;
 import Smart_Carpooling.demo.Repository.BookingRepo;
 import Smart_Carpooling.demo.Repository.RideRepository;
 import Smart_Carpooling.demo.Repository.UserRepository;
 import Smart_Carpooling.demo.Service.JwtBlacklistService;
+import Smart_Carpooling.demo.Service.RideService;
 import Smart_Carpooling.demo.Service.UserService;
 import Smart_Carpooling.demo.Utitly.JWTUTIL;
 import jakarta.servlet.http.HttpServletResponse;
@@ -40,6 +42,8 @@ public class UserController {
     private RideRepository rideRepository;
     @Autowired
     private BookingRepo bookingRepo;
+    @Autowired
+    private RideService rideService;
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(){
         try{
@@ -67,7 +71,7 @@ public class UserController {
     @PutMapping("/update")
     public ResponseEntity<?> updateUser(@RequestBody Map<String,Object> updates){
         try{
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            Authentication authentication=SecurityContextHolder.getContext().getAuthentication();
             String userId = authentication.getName();
             User user = userService.findById(userId);
             if (user != null) {
@@ -197,17 +201,34 @@ public class UserController {
         String email=authentication.getName();
         User user=userService.findById(email);
         List<Booking> bookings=bookingRepo.findByPassengerId(user.getId());
-        double totalSavings= bookings.stream()
-                    .filter(b->b.getRide().getRideDate().isBefore(LocalDate.now()))
-                .mapToDouble(b->{
-                    Ride r=b.getRide();
-                    int passengers=r.getTotalSeats()-r.getAvailableSeats();
-                    if(passengers<=1) return 0;
-                    double solo=r.getDistance()*10;
-                    return solo-(solo/passengers);
+        System.out.println("Total bookings found: " + bookings.size());
+        bookings.forEach(b -> System.out.println("Ride date: " + b.getRide().getRideDate() + ", isBefore now: " + b.getRide().getRideDate().isBefore(LocalDate.now())));
+        double totalSavings = bookings.stream()
+                .filter(b -> b.getRide().getRideDate().isBefore(LocalDate.now()))
+                .mapToDouble(b -> {
+                    Ride r = b.getRide();
+                    int passengers = r.getTotalSeats() - r.getAvailableSeats();
+                    double solo = r.getDistance() * 10;
+                    System.out.println("Ride: totalSeats=" + r.getTotalSeats()
+                            + ", availableSeats=" + r.getAvailableSeats()
+                            + ", passengers=" + passengers
+                            + ", distance=" + r.getDistance()
+                            + ", solo=" + solo);
+                    if (passengers <= 1) return 0;
+                    return solo - (solo / passengers);
                 })
                 .sum();
         return ResponseEntity.ok(totalSavings);
+    }
+    @GetMapping("/coRiders")
+    public ResponseEntity<List<CoRiderDTO>> getCoRiders(){
+        Authentication authentication=SecurityContextHolder.getContext().getAuthentication();
+        String email=authentication.getName();
+        User user=userService.findById(email);
+        List<CoRiderDTO> ans=rideService.getRecentCoRiders(user.getId());
+        System.out.println("coRiders are:"+ ans);
+        return ResponseEntity.ok(ans);
+
     }
 
 

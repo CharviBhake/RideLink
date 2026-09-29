@@ -9,7 +9,9 @@ import org.springframework.core.env.ConfigurableEnvironment;
 public class DemoApplication {
 
     public static void main(String[] args) {
+        System.out.println("MONGODB_URI = [" + System.getenv("MONGODB_URI") + "]");
         ConfigurableApplicationContext context= SpringApplication.run(DemoApplication.class,args);
+
         ConfigurableEnvironment environment=context.getEnvironment();
         String[] profiles = environment.getActiveProfiles();
         if (profiles.length > 0) {

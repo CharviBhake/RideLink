@@ -129,8 +129,10 @@ public class RiderController {
                     .rideDate(req.getRideDate())
                     .departureTime(req.getDepartureTime())
                     .availableSeats(req.getAvailableSeats())
+                    .totalSeats(req.getAvailableSeats())
                     .pricePerSeat(req.getPricePerSeat())
                     .status(RideStatus.AVAILABLE)
+                    .co2Saved(rideService.calculateCo2(startLatLng[0],startLatLng[1],endLatLng[0],endLatLng[2],req.getAvailableSeats()))
                     .distance(distanceUtil.calculateDistance(startLatLng[0], startLatLng[1], endLatLng[0], endLatLng[1]))
                     .build();
 
@@ -217,5 +219,7 @@ public class RiderController {
         return ResponseEntity.ok(t);
 
     }
+
+
 
 }
