@@ -10,6 +10,8 @@ import org.springframework.data.geo.Distance;
 import org.springframework.data.geo.Point;
 @Repository
 public interface RideRepository extends MongoRepository<Ride,String> {
+
+    List<Ride> findByBookingsPassengerId(String passengerId);   // rides where the user has a booking
     List<Ride> findByDriverId(String driverId);
     List<Ride> findByStartPointNear(Point point, Distance distance);
     List<Ride> findByStartPointNearAndRideDateGreaterThanEqual(Point point, Distance distance, LocalDate date);

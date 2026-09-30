@@ -16,15 +16,14 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.LocalTime;
+import java.util.*;
 
 
 import org.springframework.data.geo.Point;
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexType;
 import org.springframework.data.mongodb.core.index.GeoSpatialIndexed;
+import java.time.ZoneId;
 
 @CrossOrigin(origins = {"http://localhost:3000", "https://ride-link-frontend.vercel.app"})
 @Controller
@@ -173,18 +172,40 @@ public class RiderController {
     public ResponseEntity<List<User>> findConnectedUsers(@PathVariable String rideId){
         return ResponseEntity.ok(chatService.getUsersInRide(rideId));
     }*/
-
+ private static final ZoneId ZONE = ZoneId.of("Asia/Kolkata");
     @GetMapping("/getList")
     public ResponseEntity<List<Ride>> getListOfRidesForUser() {
-        Authentication authentication =SecurityContextHolder.getContext().getAuthentication();
-        String userId = authentication.getName(); // email in your case
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String userId = authentication.getName();   // the JWT subject, i.e. the user id
         User user = userService.findById(userId);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        List<Ride> rides = rideRepository.findByDriverId(user.getId());
-        List<Ride> ans=rides.stream().filter(r->r.getRideDate().isBefore(LocalDate.now())).toList();
-        return ResponseEntity.ok(ans);
+
+        LocalDate today = LocalDate.now(ZONE);
+        LocalTime now = LocalTime.now(ZONE);
+
+        Map<String, Ride> merged = new LinkedHashMap<>();
+        rideRepository.findByDriverId(user.getId()).forEach(r -> merged.put(r.getId(), r));
+        rideRepository.findByBookingsPassengerId(user.getId()).forEach(r -> merged.put(r.getId(), r));
+
+        List<Ride> upcoming = merged.values().stream()
+                .filter(r -> isUpcoming(r, today, now))
+                .sorted(Comparator
+                        .comparing(Ride::getRideDate)
+                        .thenComparing(Ride::getDepartureTime, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+
+        return ResponseEntity.ok(upcoming);
+    }
+
+    private boolean isUpcoming(Ride r, LocalDate today, LocalTime now) {
+        if (r.getRideDate() == null) return false;
+        // if (r.getStatus() == RideStatus.CANCELLED) return false;
+
+        if (r.getRideDate().isAfter(today)) return true;
+        return r.getRideDate().isEqual(today)
+                && (r.getDepartureTime() == null || r.getDepartureTime().isAfter(now));
     }
 
     @GetMapping("/history/driver")
