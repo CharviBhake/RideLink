@@ -15,7 +15,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
 
 @Controller
 @RequestMapping("SearchRides")
@@ -45,15 +50,17 @@ public class SearchRidesController {
         }
     }
 
+    private static final ZoneId ZONE = ZoneId.of("Asia/Kolkata");
+
     @PostMapping("/search")
     public ResponseEntity<List<Ride>> searchRides(@RequestBody SearchRide req) {
         if (req.getStartLocation() == null || req.getStartLocation().isBlank()) {
             return ResponseEntity.badRequest().body(List.of());
         }
+
         double[] userStartLatLng;
         try {
-            userStartLatLng =
-                    rideService.getLatLngFromAddress(req.getStartLocation());
+            userStartLatLng = rideService.getLatLngFromAddress(req.getStartLocation());
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body(List.of());
@@ -61,24 +68,53 @@ public class SearchRidesController {
         if (userStartLatLng == null) {
             return ResponseEntity.badRequest().body(List.of());
         }
+
         System.out.println("USER LAT = " + userStartLatLng[0]);
         System.out.println("USER LNG = " + userStartLatLng[1]);
-        double radiusKm=50;
-        String cacheKey= nearByRideCacheService.buildKey(userStartLatLng[0],userStartLatLng[1],radiusKm);
-        List<Ride> cached=nearByRideCacheService.get(cacheKey);
-        if(cached!=null){
+
+        LocalDate today = LocalDate.now(ZONE);
+        LocalTime now = LocalTime.now(ZONE);
+
+        double radiusKm = 50;
+
+        // date is part of the key so each day gets its own cache entry
+        String cacheKey = nearByRideCacheService.buildKey(
+                userStartLatLng[0], userStartLatLng[1], radiusKm) + ":" + today;
+
+        List<Ride> cached = nearByRideCacheService.get(cacheKey);
+        if (cached != null) {
             System.out.println("Redis cache hit");
-            return ResponseEntity.ok(cached);
+            // re-filter on every hit so rides that departed since caching disappear
+            return ResponseEntity.ok(
+                    cached.stream().filter(r -> isUpcoming(r, today, now)).toList());
         }
+
         Point userStart = new Point(
                 userStartLatLng[1], // lng
                 userStartLatLng[0]  // lat
         );
         Distance radius = new Distance(radiusKm, Metrics.KILOMETERS);
-        List<Ride> nearbyRides =
-                rideRepository.findByStartPointNear(userStart, radius);
-        System.out.println("REDIS MISS TRYING TO FIND USING MONGODB="+nearbyRides.size());
-        nearByRideCacheService.set(cacheKey,nearbyRides);
-        return ResponseEntity.ok(nearbyRides);
+
+        List<Ride> nearbyRides = rideRepository
+                .findByStartPointNearAndRideDateGreaterThanEqual(userStart, radius, today);
+
+        System.out.println("REDIS MISS, FOUND IN MONGODB = " + nearbyRides.size());
+        nearByRideCacheService.set(cacheKey, nearbyRides);
+
+        return ResponseEntity.ok(
+                nearbyRides.stream().filter(r -> isUpcoming(r, today, now)).toList());
+    }
+
+    private boolean isUpcoming(Ride r, LocalDate today, LocalTime now) {
+        if (r.getRideDate() == null) return false;
+        if (r.getAvailableSeats() <= 0) return false;
+        // if (r.getStatus() != RideStatus.ACTIVE) return false;  // uncomment, use your enum value
+
+        if (r.getRideDate().isAfter(today)) return true;
+
+        // today's rides: only those that haven't departed yet
+        return r.getRideDate().isEqual(today)
+                && r.getDepartureTime() != null
+                && r.getDepartureTime().isAfter(now);
     }
 }
