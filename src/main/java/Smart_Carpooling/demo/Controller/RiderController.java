@@ -131,7 +131,7 @@ public class RiderController {
                     .totalSeats(req.getAvailableSeats())
                     .pricePerSeat(req.getPricePerSeat())
                     .status(RideStatus.AVAILABLE)
-                    .co2Saved(rideService.calculateCo2(startLatLng[0],startLatLng[1],endLatLng[0],endLatLng[2],req.getAvailableSeats()))
+                    .co2Saved(rideService.calculateCo2(startLatLng[0],startLatLng[1],endLatLng[0],endLatLng[1],req.getAvailableSeats()))
                     .distance(distanceUtil.calculateDistance(startLatLng[0], startLatLng[1], endLatLng[0], endLatLng[1]))
                     .build();
 
